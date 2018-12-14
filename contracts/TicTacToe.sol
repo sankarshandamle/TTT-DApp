@@ -1,10 +1,10 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.4.24;
 
 contract TicTacToe {
     
     /* state variables */
     struct Player {
-        bytes32 name;
+        string name;
         uint256 deposit;
         uint8 move;
         uint8 index;
@@ -14,12 +14,13 @@ contract TicTacToe {
     uint8 private turn=0;
     uint256 private moveCount=0;
     bool private Game=true;
-    bytes32 private winnerName;
+    string private winnerName;
     mapping (address=>Player) playerSet;
+    uint256 private balance;
     
     mapping (uint8=> mapping (uint8=>uint8)) gameBoard; // defining the game board; 1 represents x and 2 represents o
     
-    event GameWinner(bytes32 name);
+    event GameWinner(string name);
     
     /* condition checks */
     modifier gameNotOver () {
@@ -47,12 +48,17 @@ contract TicTacToe {
         _;
     }
     
-    
+    modifier playerExists (address _add) {
+        require (playerSet[_add].deposit!=0, "Player does not exist");
+        _;
+    }
     /* Game functions */
-    function registerPlayer (bytes32 s, uint256 token) public playerCount() {
+    
+    function registerPlayer (string memory s, uint256 token) public payable playerCount() {
         noPlayers=noPlayers+1;
         playerSet[msg.sender].name=s;
         playerSet[msg.sender].deposit=token;
+        balance+=msg.value;
         if (noPlayers==1) {
             playerSet[msg.sender].index=1;
             playerSet[msg.sender].move=1;
@@ -80,27 +86,37 @@ contract TicTacToe {
     }
     
     function checkWinner () private {
+        /*
         // check diagonals
-        if ((gameBoard[0][0]==gameBoard[1][1] && gameBoard[1][1]==gameBoard[2][2]) || (gameBoard[0][2]==gameBoard[1][1] && gameBoard[1][1]==gameBoard[2][0])) {
+        if (((gameBoard[0][0]==gameBoard[1][1] && gameBoard[1][1]==gameBoard[2][2]) || (gameBoard[0][2]==gameBoard[1][1] && gameBoard[1][1]==gameBoard[2][0]))&& gameBoard[0][0]!=0 && gameBoard[0][1]!=0 && gameBoard[0][2]!=0) {
             winnerName=playerSet[msg.sender].name;
             Game=false;
             emit GameWinner(winnerName);
             return;
         }
         // check rows
-        if ((gameBoard[0][0]==gameBoard[0][1] && gameBoard[0][1]==gameBoard[0][2]) || (gameBoard[1][0]==gameBoard[1][1] && gameBoard[1][1]==gameBoard[1][2]) || (gameBoard[2][0]==gameBoard[2][1] && gameBoard[2][1]==gameBoard[2][2])) {
+        if (((gameBoard[0][0]==gameBoard[0][1] && gameBoard[0][1]==gameBoard[0][2]) || (gameBoard[1][0]==gameBoard[1][1] && gameBoard[1][1]==gameBoard[1][2]) || (gameBoard[2][0]==gameBoard[2][1] && gameBoard[2][1]==gameBoard[2][2])) && gameBoard[0][0]!=0 && gameBoard[0][1]!=0 && gameBoard[0][2]!=0) {
             winnerName=playerSet[msg.sender].name;
             Game=false; 
             emit GameWinner(winnerName);
             return;
         }
         // check columns
-        if ((gameBoard[0][0]==gameBoard[0][1] && gameBoard[0][1]==gameBoard[0][2]) || (gameBoard[1][0]==gameBoard[1][1] && gameBoard[1][1]==gameBoard[1][2]) || (gameBoard[2][0]==gameBoard[2][1] && gameBoard[2][1]==gameBoard[2][2])) {
+        if (((gameBoard[0][0]==gameBoard[1][0] && gameBoard[1][0]==gameBoard[2][0]) || (gameBoard[0][1]==gameBoard[1][1] && gameBoard[1][1]==gameBoard[2][1]) || (gameBoard[0][2]==gameBoard[1][2] && gameBoard[1][2]==gameBoard[2][2])) && gameBoard[0][0]!=0 && gameBoard[0][1]!=0 && gameBoard[0][2]!=0) {
             winnerName=playerSet[msg.sender].name;
             Game=false; 
             emit GameWinner(winnerName);
             return;
         }
+        */
+        
+        if (gameBoard[0][0]==gameBoard[1][0] && gameBoard[1][0]==gameBoard[2][0] && gameBoard[0][0]==1) {
+            winnerName=playerSet[msg.sender].name;
+            Game=false; 
+            emit GameWinner(winnerName);
+            return;
+        }
+        
         // check for draw
         if (moveCount==9) {
             Game=false;
@@ -110,7 +126,10 @@ contract TicTacToe {
     }
     
     function returnDeposit() public payable gameOver() {
+        balance-=playerSet[msg.sender].deposit;
         msg.sender.transfer(playerSet[msg.sender].deposit);
     } 
-
+    
+ 
+    
 }
